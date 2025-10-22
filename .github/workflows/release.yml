@@ -19,16 +19,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java (Temurin Java 21 LTS)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
-      - name: Install Flutter
-        uses: subosito/flutter-action@v2
+      - name: Set up Flutter
+        uses: flutter-actions/setup-flutter@v2
         with:
-          flutter-version: stable
+          channel: stable
 
       - name: Flutter pub get
         working-directory: ./
@@ -71,8 +71,17 @@ jobs:
           asset_name: app-arm64-v8a-release.apk
           asset_content_type: application/vnd.android.package-archive
 
+      - name: Check x86 APK exists
+        id: check_x86
+        run: |
+          if [ -f build/app/outputs/flutter-apk/app-x86_64-release.apk ]; then
+            echo "apk_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "apk_exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload x86 APK (if exists)
-        if: ${{ hashFiles('build/app/outputs/flutter-apk/app-x86_64-release.apk') != '' }}
+        if: ${{ steps.check_x86.outputs.apk_exists == 'true' }}
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
