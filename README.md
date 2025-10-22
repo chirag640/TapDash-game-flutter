@@ -166,7 +166,48 @@ flutter run --release
 ## 🐛 Known Issues
 None currently! 🎉
 
-## 📝 Changelog
+## � CI / CD — Automatic APK releases
+
+This repository contains a GitHub Actions workflow that builds Android release APKs and publishes them to GitHub Releases on every push to the `main` branch.
+
+Workflow file: `.github/workflows/release.yml`
+
+What the workflow does:
+- Checks out the code, installs Flutter and Java.
+- Optionally decodes a Base64 keystore from the `KEYSTORE_BASE64` secret and writes `android/key.properties` using the other secrets.
+- Builds release APKs (`--split-per-abi`).
+- Creates a GitHub Release and uploads built APK(s) as assets.
+
+Required repository secrets (set these in GitHub → Settings → Secrets → Actions):
+- `KEYSTORE_BASE64` (optional): Base64-encoded keystore file content. If omitted the APK will be built unsigned.
+- `KEYSTORE_PASSWORD` (required if `KEYSTORE_BASE64` is set): the keystore password.
+- `KEY_ALIAS` (required if `KEYSTORE_BASE64` is set): the key alias inside the keystore (e.g. `codemagic`).
+- `KEY_PASSWORD` (required if `KEYSTORE_BASE64` is set): the private key password (can be same as `KEYSTORE_PASSWORD`).
+
+How to create Base64 keystore (Windows PowerShell):
+```powershell
+# Convert a local keystore file to base64 for pasting into GitHub Secrets
+$bytes = [System.IO.File]::ReadAllBytes("codemagic.keystore")
+[System.Convert]::ToBase64String($bytes) | Out-File -Encoding ASCII keystore.b64
+Get-Content keystore.b64 -Raw
+```
+
+On Linux/macOS:
+```bash
+base64 codemagic.keystore > keystore.b64
+cat keystore.b64
+```
+
+Troubleshooting keystore alias collisions:
+- If you see `alias already exists`, either pick a different alias when creating the key or create a new keystore file (rename or delete the existing keystore).
+
+Where to find the APKs:
+- After the workflow runs, a GitHub Release will be created and the APKs attached to that release. Use the Releases tab of your repository.
+
+Safe defaults:
+- If you don't provide `KEYSTORE_BASE64`, the workflow still builds APK(s) but they will not be signed for Play Store upload. They are fine for testing on devices.
+
+## �📝 Changelog
 
 ### v1.0.0 (Sprint 1 - MVP)
 - [Added] Core Flame game loop with player, obstacle, and scoring
